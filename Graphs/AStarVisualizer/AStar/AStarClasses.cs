@@ -6,11 +6,11 @@ namespace AStarClasses
     {
         public class Edge<T>
         {
-            public Vertex<T> StartingPoint { get; set; }
-            public Vertex<T> EndingPoint { get; set; }
+            public VisualizerVertex<T> StartingPoint { get; set; }
+            public VisualizerVertex<T> EndingPoint { get; set; }
             public float Distance { get; set; }
 
-            public Edge(Vertex<T> startingPoint, Vertex<T> endingPoint, float distance)
+            public Edge(VisualizerVertex<T> startingPoint, VisualizerVertex<T> endingPoint, float distance)
             {
                 StartingPoint = startingPoint;
                 EndingPoint = endingPoint;
@@ -18,8 +18,26 @@ namespace AStarClasses
             }
         }
 
-        public class AStarVar
+        public class VertexBase<T>
         {
+            public T Value { get; set; }
+            public List<Edge<T>> Neighbors { get; set; }
+
+            public int NeighborCount => Neighbors.Count;
+
+            public VertexBase(T value)
+            {
+                Value = value;
+                Neighbors = new List<Edge<T>>();
+            }
+        }
+
+        public class VisualizerVertex<T>
+        {
+            public AStarVertex<T> pathVertex;
+
+            public List<Edge<T>> Neighbors { get => pathVertex.Neighbors; }
+
             public Point position;
 
             public Color color;
@@ -27,42 +45,42 @@ namespace AStarClasses
             public int Z = 1;
         }
 
-        public class Vertex<T>
+        public class AStarVertex<T>
         {
-            public T Value { get; set; }
-            public List<Edge<T>> Neighbors { get; set; }
+            private VertexBase<T> Vertex;
 
-            public int NeighborCount => Neighbors.Count;
+            public List<Edge<T>> Neighbors { get =>  Vertex.Neighbors; }
 
-            public Vertex(T value)
-            {
-                Value = value;
-                Neighbors = new List<Edge<T>>();
-            }
-        }
+            public VertexBase<T> Founder;
 
-        public class VertexInfo<T>
-        {
-            public Vertex<T> Vertex;
-            public Vertex<T> Founder;
             public bool Visited;
             public float KnownDistance { get; set; }
             public float FinalDistance { get; set; }
 
-            public VertexInfo(Vertex<T> vertex)
+            public AStarVertex(VertexBase<T> vertex)
             {
                 Vertex = vertex;
                 KnownDistance = float.PositiveInfinity;
                 FinalDistance = float.PositiveInfinity;
                 Visited = false;
             }
+
+            public int NeighborCount()
+            {
+                return Vertex.NeighborCount;
+            }
+
+            public T GetValue()
+            {
+                return Vertex.Value;
+            }
         }
 
         public class Graph<T>
         {
-            private List<Vertex<T>> vertices;
+            private List<VisualizerVertex<T>> vertices;
 
-            public IReadOnlyList<Vertex<T>> Vertices => vertices;
+            public IReadOnlyList<VisualizerVertex<T>> Vertices => vertices;
 
             public IReadOnlyList<Edge<T>> Edges;
 
@@ -73,17 +91,17 @@ namespace AStarClasses
             public Graph(IEqualityComparer<T> comparer)
             {
                 Comparer = comparer;
-                vertices = new List<Vertex<T>>();
+                vertices = new List<VisualizerVertex<T>>();
             }
 
-            public bool AddVertex(Vertex<T> vertex)
+            public bool AddVertex(VisualizerVertex<T> vertex)
             {
                 if (vertex == null) return false;
-                if (vertex.NeighborCount > 0) return false;
+                if (vertex.pathVertex.NeighborCount() > 0) return false;
 
-                foreach (Vertex<T> v in Vertices)
+                foreach (VisualizerVertex<T> v in Vertices)
                 {
-                    if (vertex.Value.Equals(v.Value)) return false;
+                    if (vertex.pathVertex.GetValue().Equals(v.pathVertex.GetValue())) return false;
                 }
 
                 vertices.Add(vertex);
@@ -91,11 +109,11 @@ namespace AStarClasses
                 return true;
             }
 
-            public bool RemoveVertex(Vertex<T> vertex)
+            public bool RemoveVertex(VisualizerVertex<T> vertex)
             {
                 if (!Vertices.Contains(vertex)) return false;
 
-                foreach (Vertex<T> test in Vertices)
+                foreach (VisualizerVertex<T> test in Vertices)
                 {
                     foreach (Edge<T> neighbor in test.Neighbors)
                     {
@@ -110,11 +128,11 @@ namespace AStarClasses
                 return true;
             }
 
-            public bool AddEdge(Vertex<T> first, Vertex<T> second, int distance)
+            public bool AddEdge(VisualizerVertex<T> first, VisualizerVertex<T> second, int distance)
             {
                 if (!Vertices.Contains(first) || !Vertices.Contains(second)) return false;
 
-                for (int i = 0; i < first.NeighborCount; i++)
+                for (int i = 0; i < first.pathVertex.NeighborCount(); i++)
                 {
                     if (first.Neighbors[i].EndingPoint == second) return false;
                 }
@@ -124,14 +142,14 @@ namespace AStarClasses
                 return true;
             }
 
-            public bool RemoveEdge(Vertex<T> start, Vertex<T> end)
+            public bool RemoveEdge(VisualizerVertex<T> start, VisualizerVertex<T> end)
             {
                 if (start == null || end == null) return false;
                 if (!vertices.Contains(start) || !vertices.Contains(end)) return false;
 
                 int index = -1;
 
-                for (int i = 0; i < start.NeighborCount; i++)
+                for (int i = 0; i < start.pathVertex.NeighborCount(); i++)
                 {
                     if (start.Neighbors[i].EndingPoint == end)
                     {
@@ -147,11 +165,11 @@ namespace AStarClasses
                 return true;
             }
 
-            public Vertex<T> Search(T value)
+            public VisualizerVertex<T> Search(T value)
             {
                 for (int i = 0; i < vertices.Count; i++)
                 {
-                    if (Comparer.Equals(value, vertices[i].Value))
+                    if (Comparer.Equals(value, vertices[i].pathVertex.GetValue()))
                     {
                         return vertices[i];
                     }
@@ -165,7 +183,7 @@ namespace AStarClasses
                 return null;
             }
 
-            public Edge<T> GetEdge(Vertex<T> start, Vertex<T> end)
+            public Edge<T> GetEdge(VisualizerVertex<T> start, VisualizerVertex<T> end)
             {
                 if (start == null || end == null) return null;
                 foreach (Edge<T> neighbor in start.Neighbors)
@@ -176,7 +194,7 @@ namespace AStarClasses
                 return null;
             }
 
-            public int GetIndex(Vertex<T> vertex)
+            public int GetIndex(VisualizerVertex<T> vertex)
             {
                 for (int i = 0; i < vertices.Count; i++)
                 {
@@ -189,20 +207,20 @@ namespace AStarClasses
                 return -1;
             }
 
-            public int Manhattan(Vertex<AStarVar> start, Vertex<AStarVar> end)
+            public int Manhattan(VisualizerVertex<T> start, VisualizerVertex<T> end)
             {
-                int xDistance = Math.Abs(start.Value.position.X - end.Value.position.X);
-                int yDistance = Math.Abs(start.Value.position.Y - end.Value.position.Y);
+                int xDistance = Math.Abs(start.position.X - end.position.X);
+                int yDistance = Math.Abs(start.position.Y - end.position.Y);
 
-                return start.Value.Z * (xDistance + yDistance);
+                return start.Z * (xDistance + yDistance);
             }
 
-            public List<Vertex<T>> AStarPathFinding(Vertex<AStarVar> start, Vertex<AStarVar> end, Func<Vertex<T>, Vertex<T>, int> heiristic)
+            public List<VisualizerVertex<T>> AStarPathFinding(VisualizerVertex<T> start, VisualizerVertex<T> end, Func<VisualizerVertex<T>, VisualizerVertex<T>, int> heiristic)
             {
-                Dictionary<Vertex<AStarVar>, VertexInfo<AStarVar>> points = new();
-                PriorityQueue<VertexInfo<T>, float> upcoming = new();
-                List<Vertex<T>> mimickList = new();
-                List<Vertex<T>> visited = new();
+                Dictionary<Vertex<AStarVar>, VertexInfo<AStarVar>> points = new(); //CREATED A WRAPPER FOR BOTH (VERTEX INSIDE ASTART INSIDE VISUALIZER FOR ORGANIZATION; NEIGHBORS IN EACH; FINISH CHANGES
+                PriorityQueue<VisualizerVertex<T>, float> upcoming = new();
+                List<VisualizerVertex<T>> mimickList = new();
+                List<VisualizerVertex<T>> visited = new();
 
                 for (int i = 0; i < vertices.Count; i++)
                 {
