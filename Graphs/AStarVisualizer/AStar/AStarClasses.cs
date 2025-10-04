@@ -51,7 +51,7 @@ namespace AStarClasses
 
             public List<Edge<T>> Neighbors { get =>  Vertex.Neighbors; }
 
-            public VertexBase<T> Founder;
+            public AStarVertex<T> Founder;
 
             public bool Visited;
             public float KnownDistance { get; set; }
@@ -217,60 +217,60 @@ namespace AStarClasses
 
             public List<VisualizerVertex<T>> AStarPathFinding(VisualizerVertex<T> start, VisualizerVertex<T> end, Func<VisualizerVertex<T>, VisualizerVertex<T>, int> heiristic)
             {
-                Dictionary<Vertex<AStarVar>, VertexInfo<AStarVar>> points = new(); //CREATED A WRAPPER FOR BOTH (VERTEX INSIDE ASTART INSIDE VISUALIZER FOR ORGANIZATION; NEIGHBORS IN EACH; FINISH CHANGES
-                PriorityQueue<VisualizerVertex<T>, float> upcoming = new();
-                List<VisualizerVertex<T>> mimickList = new();
-                List<VisualizerVertex<T>> visited = new();
+                Dictionary<AStarVertex<T>, VisualizerVertex<T>> points = new(); //CREATED A WRAPPER FOR BOTH (VERTEX INSIDE ASTART INSIDE VISUALIZER FOR ORGANIZATION; NEIGHBORS IN EACH; FINISH CHANGES
+                PriorityQueue<AStarVertex<T>, float> upcoming = new();
+                List<AStarVertex<T>> mimickList = new();
+                List<AStarVertex<T>> visited = new();
 
                 for (int i = 0; i < vertices.Count; i++)
                 {
-                    points.Add(vertices[i], new VertexInfo<T>(vertices[i]));
+                    points.Add(vertices[i].pathVertex, vertices[i]);
                 }
-                points[start].KnownDistance = 0;
-                points[start].FinalDistance = Manhattan(start, end);
-                upcoming.Enqueue(points[start], points[start].FinalDistance);
-                VertexInfo<T> test;
+                start.pathVertex.KnownDistance = 0;
+                start.pathVertex.FinalDistance = Manhattan(start, end);
+                upcoming.Enqueue(start.pathVertex, start.pathVertex.FinalDistance);
+                AStarVertex<T> test;
 
                 while (upcoming.Count != 0)
                 {
                     test = upcoming.Dequeue();
-                    mimickList.Remove(test.Vertex);
-                    VertexInfo<T> neighbor;
-                    visited.Add(test.Vertex);
+                    mimickList.Remove(test);
+                    AStarVertex<T> neighbor;
+                    visited.Add(test);
 
-                    if (visited.Contains(end))
+                    if (visited.Contains(end.pathVertex))
                     {
                         break;
                     }
 
-                    for (int i = 0; i < test.Vertex.NeighborCount; i++)
+                    for (int i = 0; i < test.NeighborCount(); i++)
                     {
-                        neighbor = points[test.Vertex.Neighbors[i].EndingPoint];
-                        float newDistance = test.KnownDistance + test.Vertex.Neighbors[i].Distance;
+                        neighbor = test.Neighbors[i].EndingPoint.pathVertex;
+                        float newDistance = test.KnownDistance + test.Neighbors[i].Distance;
 
                         if (-(newDistance) > -(neighbor.KnownDistance))
                             continue;
 
                         neighbor.KnownDistance = newDistance;
-                        neighbor.Founder = test.Vertex;
+                        neighbor.Founder = test;
 
                         neighbor.FinalDistance = newDistance + heiristic(start, end);
 
-                        if (mimickList.Contains(neighbor.Vertex))
+                        if (mimickList.Contains(neighbor))
                             continue;
 
                         upcoming.Enqueue(neighbor, neighbor.FinalDistance);
-                        mimickList.Add(neighbor.Vertex);
+                        mimickList.Add(neighbor);
                     }
                 }
 
-                List<Vertex<T>> finalPath = new List<Vertex<T>>();
-                VertexInfo<T> current = points[end];
+                List<VisualizerVertex<T>> finalPath = new List<VisualizerVertex<T>>();
+                VisualizerVertex<T> current = end;
 
-                while (current.Vertex != start)
+                while (current != start)
                 {
-                    finalPath.Add(current.Vertex);
-                    current = points[current.Founder];
+                    finalPath.Add(current);
+                    current = points[current.pathVertex.Founder];
                 }
 
                 return finalPath;

@@ -2,6 +2,7 @@ using AStarClasses;
 using AStarVisualizer.WeightedDirectedGraph;
 using Microsoft.VisualBasic.ApplicationServices;
 using System.Diagnostics.CodeAnalysis;
+using System.Drawing.Drawing2D;
 using static AStarClasses.AStar;
 
 namespace AStarVisualizer
@@ -10,20 +11,20 @@ namespace AStarVisualizer
     {
         Graphics graphics;
         Bitmap bitmap;
-        AStar.Graph<AStar.AStarVar> grid;// = new(new AStarComparer());
+        Graph<int> grid;// = new(new AStarComparer());
 
-        public class AStarComparer : IEqualityComparer<AStar.AStarVar>
+        public class AStarComparer : IEqualityComparer<VisualizerVertex<T>>
         {
-            public bool Equals(AStar.AStarVar? x, AStar.AStarVar? y)
+            public bool Equals(VisualizerVertex<int>? x, VisualizerVertex<int>? y)
             {
                 return x == y;
             }
 
-            public AStar.Vertex<AStar.AStarVar> Search(Point position, AStar.Graph<AStar.AStarVar> grid)
+            public VisualizerVertex<int> Search(Point position, Graph<int> grid)
             {
                 for (int i = 0; i < grid.VertexCount; i++)
                 {
-                    if (Equals(position, grid.Vertices[i].Value.position))
+                    if (Equals(position, grid.Vertices[i].position))
                     {
                         return grid.Vertices[i];
                     }
@@ -32,7 +33,7 @@ namespace AStarVisualizer
                 return null;
             }
 
-            public int GetHashCode([DisallowNull] AStar.AStarVar obj)
+            public int GetHashCode([DisallowNull] VisualizerVertex<int> obj)
             {
                 return (obj == null) ? 0 : obj.GetHashCode();
             }
@@ -48,8 +49,8 @@ namespace AStarVisualizer
 
         Pen pen = new Pen(Color.Black);
 
-        AStar.Vertex<AStar.AStarVar> start;
-        AStar.Vertex<AStar.AStarVar> end;
+        VisualizerVertex<int> start;
+        VisualizerVertex<int> end;
 
         public Form1()
         {
@@ -82,11 +83,9 @@ namespace AStarVisualizer
             {
                 for (int x = 0; x < pathVisual.Width; x += gridWidth)
                 {
-                    AStar.AStarVar gridSquare = new AStar.AStarVar();
-                    gridSquare.color = Color.White;
-                    gridSquare.position = new Point(x / gridWidth, y / gridHeight);
-
-                    AStar.Vertex<AStar.AStarVar> vertex = new(gridSquare);
+                    VisualizerVertex<int> vertex = new VisualizerVertex<int>();
+                    vertex.color = Color.White;
+                    vertex.position = new Point(x /  gridWidth, y / gridHeight);
 
                     grid.AddVertex(vertex);
                 }
@@ -95,7 +94,7 @@ namespace AStarVisualizer
             for (int i = 0; i < grid.VertexCount; i++)
             {
                 int widthNum = pathVisual.Width / gridWidth;
-                int index = GetIndex(grid.Vertices[i].Value.position, widthNum);
+                int index = GetIndex(grid.Vertices[i].position, widthNum);
                 int upperIndex = index - widthNum;
                 int lowerIndex = index + widthNum;
 
@@ -120,11 +119,11 @@ namespace AStarVisualizer
 
             //top left
             start = grid.Vertices[0];
-            start.Value.color = Color.Green;
+            start.color = Color.Green;
 
             //bottom right
             end = grid.Vertices[grid.VertexCount - 1];
-            end.Value.color = Color.Green;
+            end.color = Color.Green;
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -136,9 +135,9 @@ namespace AStarVisualizer
 
             graphics = Graphics.FromImage(bitmap);
 
-            IEqualityComparer<AStar.AStarVar> starComparer = new AStarComparer();
+            IEqualityComparer<VisualizerVertex<int>> starComparer = new AStarComparer();
 
-            grid = new AStar.Graph<AStar.AStarVar>(starComparer);
+            grid = new Graph<int>(starComparer);
 
             DrawBase();
             SetGrids();
@@ -147,7 +146,7 @@ namespace AStarVisualizer
         private void pathVisual_Click(object sender, EventArgs e)
         {
             if (mouseDrag > 17) return;
-            if (start.Value.color == Color.Red && end.Value.color == Color.Red) return;
+            if (start.color == Color.Red && end.color == Color.Red) return;
 
             Point nearest = new Point(gridWidth * (mousePos.X / gridWidth), gridHeight * (mousePos.Y / gridHeight));
 
@@ -158,25 +157,25 @@ namespace AStarVisualizer
             pathVisual.Image = bitmap;
             int index = nearest.X / gridWidth + (horizontalNum * (nearest.Y / gridHeight));
 
-            if (start.Value.color == Color.Green)
+            if (start.color == Color.Green)
             {
-                AStar.Vertex<AStar.AStarVar> startVertex = grid.Vertices[index];
-                start.Value.color = Color.Red;
+                VisualizerVertex<int> startVertex = grid.Vertices[index];
+                start.color = Color.Red;
 
-                startVertex.Value.color = Color.Red;
+                startVertex.color = Color.Red;
 
-                startVertex.Value.color = start.Value.color;
+                startVertex.color = start.color;
 
-                start.Value.position = nearest;
+                start.position = nearest;
 
                 return;
             }
 
-            end.Value.color = Color.Red;
-            AStar.Vertex<AStar.AStarVar> endVertex = grid.Vertices[index];
+            end.color = Color.Red;
+            VisualizerVertex<int> endVertex = grid.Vertices[index];
 
-            endVertex.Value.color = end.Value.color;
-            end.Value.position = nearest;
+            endVertex.color = end.color;
+            end.position = nearest;
         }
 
         private void pathVisual_MouseMove(object sender, MouseEventArgs e)
@@ -198,9 +197,9 @@ namespace AStarVisualizer
 
             int cubeIndex = nearest.X / gridWidth + (horizontalNum * (nearest.Y / gridHeight));
 
-            AStar.Vertex<AStar.AStarVar> vertex = grid.Vertices[cubeIndex];
+            VisualizerVertex<int> vertex = grid.Vertices[cubeIndex];
             //nearest.X + (nearest.Y / gridWidth)
-            if (vertex.Value.color == Color.Red) return;
+            if (vertex.color == Color.Red) return;
 
             graphics.FillRectangle(Brushes.Green, nearest.X, nearest.Y, gridWidth, gridHeight);
             pathVisual.Image = bitmap;
@@ -209,13 +208,13 @@ namespace AStarVisualizer
 
             int index = GetIndex(nearest, pathVisual.Width / gridWidth);
 
-            foreach (AStar.Edge<AStar.AStarVar> edge in vertex.Neighbors)
+            foreach (Edge<int> edge in vertex.Neighbors)
             {
                 edge.EndingPoint.Neighbors.Remove(grid.GetEdge(edge.EndingPoint, vertex));
             }
             vertex.Neighbors.Clear();
 
-            vertex.Value.color = Color.Green;
+            vertex.color = Color.Green;
         }
 
         private void pathVisual_MouseDown(object sender, MouseEventArgs e)
@@ -232,19 +231,19 @@ namespace AStarVisualizer
         {
             graphics.Clear(Color.White);
 
-            start.Value.color = Color.Green;
-            end.Value.color = Color.Green;
+            start.color = Color.Green;
+            end.color = Color.Green;
 
             DrawBase();
         }
 
         private void PathFindingButton_Click(object sender, EventArgs e)
         {
-            List<AStar.Vertex<AStar.AStarVar>> path = grid.AStarPathFinding(start, end, Manhattan);
+            List<VisualizerVertex<int>> path = grid.AStarPathFinding(start, end, grid.Manhattan);
 
-            foreach(AStar.Vertex<AStar.AStarVar> vertex in path)
+            foreach(VisualizerVertex<int> vertex in path)
             {
-                graphics.FillRectangle(Brushes.Purple, vertex.Value.position.X, vertex.Value.position.Y, gridWidth, gridHeight);
+                graphics.FillRectangle(Brushes.Purple, vertex.position.X, vertex.position.Y, gridWidth, gridHeight);
             }
 
             pathVisual.Image = bitmap;
