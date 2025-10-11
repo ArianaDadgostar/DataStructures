@@ -13,12 +13,9 @@ namespace AStarVisualizer
         Bitmap bitmap;
         Graph<int> grid;// = new(new AStarComparer());
 
-        public class AStarComparer : IEqualityComparer<VisualizerVertex<T>>
+        public class AStarComparer : IEqualityComparer<int>
         {
-            public bool Equals(VisualizerVertex<int>? x, VisualizerVertex<int>? y)
-            {
-                return x == y;
-            }
+
 
             public VisualizerVertex<int> Search(Point position, Graph<int> grid)
             {
@@ -36,6 +33,16 @@ namespace AStarVisualizer
             public int GetHashCode([DisallowNull] VisualizerVertex<int> obj)
             {
                 return (obj == null) ? 0 : obj.GetHashCode();
+            }
+
+            public bool Equals(int x, int y)
+            {
+                return x == y;
+            }
+
+            public int GetHashCode([DisallowNull] int obj)
+            {
+                return obj.GetHashCode();
             }
         }
 
@@ -77,15 +84,41 @@ namespace AStarVisualizer
             return position.X + (position.Y * widthNum);
         }
 
+        public void GridBounds(Point position)
+        {
+            int widthNum = pathVisual.Width / gridWidth;
+            int index = GetIndex(position, widthNum);
+            int upperIndex = index - widthNum;
+            int lowerIndex = index + widthNum;
+
+            if (upperIndex >= 0)
+            {
+                grid.AddEdge(grid.Vertices[index], grid.Vertices[upperIndex], 1);
+            }
+            if (lowerIndex < grid.VertexCount)
+            {
+                grid.AddEdge(grid.Vertices[index], grid.Vertices[lowerIndex], 1);
+            }
+
+            if ((index + 1) % widthNum != 0)
+            {
+                grid.AddEdge(grid.Vertices[index], grid.Vertices[index + 1], 1);
+            }
+
+            if (index % widthNum == 0) return;
+
+            grid.AddEdge(grid.Vertices[index], grid.Vertices[index - 1], 1);
+        }
+
         public void SetGrids()
         {
             for (int y = 0; y < pathVisual.Height; y += gridHeight)
             {
                 for (int x = 0; x < pathVisual.Width; x += gridWidth)
                 {
-                    VisualizerVertex<int> vertex = new VisualizerVertex<int>();
+                    VisualizerVertex<int> vertex = new VisualizerVertex<int>(grid.VertexCount);
                     vertex.color = Color.White;
-                    vertex.position = new Point(x /  gridWidth, y / gridHeight);
+                    vertex.position = new Point(x / gridWidth, y / gridHeight);
 
                     grid.AddVertex(vertex);
                 }
@@ -93,28 +126,30 @@ namespace AStarVisualizer
 
             for (int i = 0; i < grid.VertexCount; i++)
             {
-                int widthNum = pathVisual.Width / gridWidth;
-                int index = GetIndex(grid.Vertices[i].position, widthNum);
-                int upperIndex = index - widthNum;
-                int lowerIndex = index + widthNum;
+                //int widthNum = pathVisual.Width / gridWidth;
+                //int index = GetIndex(grid.Vertices[i].position, widthNum);
+                //int upperIndex = index - widthNum;
+                //int lowerIndex = index + widthNum;
 
-                if (upperIndex >= 0)
-                {
-                    grid.AddEdge(grid.Vertices[i], grid.Vertices[upperIndex], 1);
-                }
-                if (lowerIndex < grid.VertexCount)
-                {
-                    grid.AddEdge(grid.Vertices[i], grid.Vertices[lowerIndex], 1);
-                }
+                //if (upperIndex >= 0)
+                //{
+                //    grid.AddEdge(grid.Vertices[i], grid.Vertices[upperIndex], 1);
+                //}
+                //if (lowerIndex < grid.VertexCount)
+                //{
+                //    grid.AddEdge(grid.Vertices[i], grid.Vertices[lowerIndex], 1);
+                //}
 
-                if ((index + 1) % widthNum != 0)
-                {
-                    grid.AddEdge(grid.Vertices[i], grid.Vertices[i + 1], 1);
-                }
+                //if ((index + 1) % widthNum != 0)
+                //{
+                //    grid.AddEdge(grid.Vertices[i], grid.Vertices[i + 1], 1);
+                //}
 
-                if (index % widthNum == 0) continue;
+                //if (index % widthNum == 0) continue;
 
-                grid.AddEdge(grid.Vertices[i], grid.Vertices[i - 1], 1);
+                //grid.AddEdge(grid.Vertices[i], grid.Vertices[i - 1], 1);
+
+                GridBounds(grid.Vertices[i].position);
             }
 
             //top left
@@ -135,7 +170,7 @@ namespace AStarVisualizer
 
             graphics = Graphics.FromImage(bitmap);
 
-            IEqualityComparer<VisualizerVertex<int>> starComparer = new AStarComparer();
+            IEqualityComparer<int> starComparer = new AStarComparer();
 
             grid = new Graph<int>(starComparer);
 
@@ -166,7 +201,18 @@ namespace AStarVisualizer
 
                 startVertex.color = start.color;
 
+                nearest.X /= gridWidth;
+                nearest.Y /= gridHeight;
+
                 start.position = nearest;
+
+                for (int i = 0; i < start.pathVertex.NeighborCount(); i++)
+                {
+                    grid.RemoveEdge(start, start.Neighbors[i].EndingPoint);
+                }
+
+                GridBounds(start.position);
+
 
                 return;
             }
@@ -175,7 +221,17 @@ namespace AStarVisualizer
             VisualizerVertex<int> endVertex = grid.Vertices[index];
 
             endVertex.color = end.color;
+            nearest.X /= gridWidth;
+            nearest.Y /= gridHeight;
+
             end.position = nearest;
+
+            for (int i = 0; i < end.pathVertex.NeighborCount(); i++)
+            {
+                grid.RemoveEdge(end, end.Neighbors[i].EndingPoint);
+            }
+
+            GridBounds(end.position);
         }
 
         private void pathVisual_MouseMove(object sender, MouseEventArgs e)
@@ -226,7 +282,7 @@ namespace AStarVisualizer
         {
             mouseDrag = 0;
         }
-        
+
         private void clearButton_Click(object sender, EventArgs e)
         {
             graphics.Clear(Color.White);
@@ -241,9 +297,9 @@ namespace AStarVisualizer
         {
             List<VisualizerVertex<int>> path = grid.AStarPathFinding(start, end, grid.Manhattan);
 
-            foreach(VisualizerVertex<int> vertex in path)
+            foreach (VisualizerVertex<int> vertex in path)
             {
-                graphics.FillRectangle(Brushes.Purple, vertex.position.X, vertex.position.Y, gridWidth, gridHeight);
+                graphics.FillRectangle(Brushes.Purple, gridWidth*(vertex.position.X), gridHeight*vertex.position.Y, gridWidth, gridHeight);
             }
 
             pathVisual.Image = bitmap;

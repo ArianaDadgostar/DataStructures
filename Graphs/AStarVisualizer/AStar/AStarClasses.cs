@@ -43,6 +43,11 @@ namespace AStarClasses
             public Color color;
 
             public int Z = 1;
+
+            public VisualizerVertex(T value)
+            {
+                pathVertex = new AStarVertex<T>(value);
+            }
         }
 
         public class AStarVertex<T>
@@ -57,9 +62,9 @@ namespace AStarClasses
             public float KnownDistance { get; set; }
             public float FinalDistance { get; set; }
 
-            public AStarVertex(VertexBase<T> vertex)
+            public AStarVertex(T value)
             {
-                Vertex = vertex;
+                Vertex = new VertexBase<T>(value);
                 KnownDistance = float.PositiveInfinity;
                 FinalDistance = float.PositiveInfinity;
                 Visited = false;
@@ -248,7 +253,7 @@ namespace AStarClasses
                         neighbor = test.Neighbors[i].EndingPoint.pathVertex;
                         float newDistance = test.KnownDistance + test.Neighbors[i].Distance;
 
-                        if (-(newDistance) > -(neighbor.KnownDistance))
+                        if (newDistance > neighbor.KnownDistance)
                             continue;
 
                         neighbor.KnownDistance = newDistance;
