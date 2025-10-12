@@ -239,27 +239,29 @@ namespace AStarClasses
                 while (upcoming.Count != 0)
                 {
                     test = upcoming.Dequeue();
+                    if (visited.Contains(test)) continue;
                     mimickList.Remove(test);
                     AStarVertex<T> neighbor;
                     visited.Add(test);
 
-                    if (visited.Contains(end.pathVertex))
-                    {
-                        break;
-                    }
 
                     for (int i = 0; i < test.NeighborCount(); i++)
                     {
                         neighbor = test.Neighbors[i].EndingPoint.pathVertex;
+
                         float newDistance = test.KnownDistance + test.Neighbors[i].Distance;
 
+                        if (neighbor.Neighbors[0].StartingPoint.position == new Point(end.position.X, end.position.Y))
+                        {
+                            ;
+                        }
                         if (newDistance > neighbor.KnownDistance)
                             continue;
 
                         neighbor.KnownDistance = newDistance;
                         neighbor.Founder = test;
 
-                        neighbor.FinalDistance = newDistance + heiristic(start, end);
+                        neighbor.FinalDistance = newDistance + heiristic(points[neighbor], end);
 
                         if (mimickList.Contains(neighbor))
                             continue;
@@ -267,6 +269,8 @@ namespace AStarClasses
                         upcoming.Enqueue(neighbor, neighbor.FinalDistance);
                         mimickList.Add(neighbor);
                     }
+
+                    if (visited.Contains(end.pathVertex)) break;
                 }
 
                 List<VisualizerVertex<T>> finalPath = new List<VisualizerVertex<T>>();

@@ -184,43 +184,39 @@ namespace AStarVisualizer
             if (start.color == Color.Red && end.color == Color.Red) return;
 
             Point nearest = new Point(gridWidth * (mousePos.X / gridWidth), gridHeight * (mousePos.Y / gridHeight));
+            int horizontalNum = pathVisual.Width / gridWidth;
+            int index = nearest.X / gridWidth + (horizontalNum * (nearest.Y / gridHeight));
+
+            if (grid.Vertices[index].color == Color.Green) return;
 
             graphics.FillRectangle(Brushes.Red, nearest.X, nearest.Y, gridWidth, gridHeight);
 
-            int horizontalNum = pathVisual.Width / gridWidth;
 
             pathVisual.Image = bitmap;
-            int index = nearest.X / gridWidth + (horizontalNum * (nearest.Y / gridHeight));
 
             if (start.color == Color.Green)
             {
-                VisualizerVertex<int> startVertex = grid.Vertices[index];
+                start = grid.Vertices[index];
                 start.color = Color.Red;
-
-                startVertex.color = Color.Red;
-
-                startVertex.color = start.color;
 
                 nearest.X /= gridWidth;
                 nearest.Y /= gridHeight;
 
                 start.position = nearest;
 
-                for (int i = 0; i < start.pathVertex.NeighborCount(); i++)
-                {
-                    grid.RemoveEdge(start, start.Neighbors[i].EndingPoint);
-                }
+                int neighborCount = start.pathVertex.NeighborCount();
 
-                GridBounds(start.position);
-
+                //for (int i = 0; i < neighborCount; i++)
+                //{
+                //    grid.RemoveEdge(start, start.Neighbors[0].EndingPoint); // Like this because neighbors update after removal.
+                //}
 
                 return;
             }
 
             end.color = Color.Red;
-            VisualizerVertex<int> endVertex = grid.Vertices[index];
+            end = grid.Vertices[index];
 
-            endVertex.color = end.color;
             nearest.X /= gridWidth;
             nearest.Y /= gridHeight;
 
@@ -230,8 +226,6 @@ namespace AStarVisualizer
             {
                 grid.RemoveEdge(end, end.Neighbors[i].EndingPoint);
             }
-
-            GridBounds(end.position);
         }
 
         private void pathVisual_MouseMove(object sender, MouseEventArgs e)
@@ -291,6 +285,7 @@ namespace AStarVisualizer
             end.color = Color.Green;
 
             DrawBase();
+            SetGrids();
         }
 
         private void PathFindingButton_Click(object sender, EventArgs e)
