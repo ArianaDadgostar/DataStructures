@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿using System.Data;
+using System.Drawing;
 
 namespace AStarClasses
 {
@@ -251,10 +252,10 @@ namespace AStarClasses
 
                         float newDistance = test.KnownDistance + test.Neighbors[i].Distance;
 
-                        if (neighbor.Neighbors[0].StartingPoint.position == new Point(end.position.X, end.position.Y))
-                        {
-                            ;
-                        }
+                        //if (neighbor.Neighbors[0].StartingPoint.position == new Point(end.position.X, end.position.Y))
+                        //{
+                        //    ;
+                        //}
                         if (newDistance > neighbor.KnownDistance)
                             continue;
 
@@ -275,6 +276,11 @@ namespace AStarClasses
 
                 List<VisualizerVertex<T>> finalPath = new List<VisualizerVertex<T>>();
                 VisualizerVertex<T> current = end;
+
+                if (!visited.Contains(end.pathVertex))
+                {
+                    return null;
+                }
 
                 while (current != start)
                 {

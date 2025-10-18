@@ -247,6 +247,8 @@ namespace AStarVisualizer
 
             int cubeIndex = nearest.X / gridWidth + (horizontalNum * (nearest.Y / gridHeight));
 
+            if (cubeIndex >= 1000 || cubeIndex < 0) return;
+
             VisualizerVertex<int> vertex = grid.Vertices[cubeIndex];
             //nearest.X + (nearest.Y / gridWidth)
             if (vertex.color == Color.Red) return;
@@ -284,6 +286,10 @@ namespace AStarVisualizer
             start.color = Color.Green;
             end.color = Color.Green;
 
+            IEqualityComparer<int> starComparer = new AStarComparer();
+
+            grid = new Graph<int>(starComparer);
+
             DrawBase();
             SetGrids();
         }
@@ -291,6 +297,12 @@ namespace AStarVisualizer
         private void PathFindingButton_Click(object sender, EventArgs e)
         {
             List<VisualizerVertex<int>> path = grid.AStarPathFinding(start, end, grid.Manhattan);
+
+            if(path == null)
+            {
+                clearButton_Click(sender, e);
+                return;
+            }
 
             foreach (VisualizerVertex<int> vertex in path)
             {
