@@ -133,13 +133,15 @@ namespace AdvancedConcepts
                 foreach (KeyValuePair<TKey, TValue> val in backingArray[i])
                 {
 
-                    int index = Math.Abs(val.GetHashCode());
-                    index %= backingArray.Length;
+                    int index = Math.Abs(val.Key.GetHashCode());
+                    index %= expanded.Length;
                     if (expanded[index] == null)
                     {
                         expanded[index] = new LinkedList<KeyValuePair<TKey, TValue>>();
+                        expanded[index].AddFirst(new KeyValuePair<TKey, TValue>(val.Key, val.Value));
+                        continue;
                     }
-                    backingArray[index].AddLast(new KeyValuePair<TKey, TValue>(val.Key, val.Value));
+                    expanded[index].AddLast(new KeyValuePair<TKey, TValue>(val.Key, val.Value));
                 }
 
             }
@@ -182,8 +184,12 @@ namespace AdvancedConcepts
         {
             int index = Math.Abs(key.GetHashCode());
             index %= backingArray.Length;
+            if (backingArray[index] == null) return false;
 
-            if (backingArray[index].Contains(new KeyValuePair<TKey, TValue>(key, value))) return true;
+            foreach (KeyValuePair<TKey, TValue> pair in backingArray[index])
+            {
+                if (pair.Key.Equals(key) && pair.Value.Equals(value)) return true;
+            }
             return false;
         }
 
@@ -214,7 +220,14 @@ namespace AdvancedConcepts
 
         public bool Contains(KeyValuePair<TKey, TValue> item)
         {
-            return Contains(item.Key, item.Value);
+            for (int i = 0; i < backingArray.Length; i++)
+            {
+                foreach(KeyValuePair<TKey, TValue> pair in backingArray[i])
+                {
+                    if (pair.Equals(item)) return true;
+                }
+            }
+            return false;
         }
     }
 }
