@@ -130,5 +130,23 @@ namespace AdvancedTests
 
             Assert.True(map.IsConnected(keys[0], keys[3]));
         }
+
+        [Theory]
+        [InlineData(new string[] { "a", "b", "c", "d" }, new int[] { 1, 2, 3, 4 })]
+        [InlineData(new string[] { "abra", "cadabra", "yayaya", "boi" }, new int[] { 700, 400, 100, 5 })]
+        [InlineData(new string[] { "abra", "cadabra", "yayaya", "marceda", "lalala", "hi" }, new int[] { 432, 71, 53, 15, 63, 287 })]
+        public void BloomFilterTest(string[] keys, params int[] values)
+        {
+            BloomFilter<string> map = new BloomFilter<string>(100);
+            for (int i = 0; i < keys.Length; i++)
+            {
+                map.Add(keys[i]);
+            }
+
+            for (int i = 0; i < keys.Length; i++)
+            {
+                Assert.True(map.ProbablyContains(keys[i]));
+            }
+        }
     }
 }
