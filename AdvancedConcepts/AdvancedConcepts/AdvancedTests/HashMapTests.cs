@@ -148,5 +148,29 @@ namespace AdvancedTests
                 Assert.True(map.ProbablyContains(keys[i]));
             }
         }
+
+        [Theory]
+        [InlineData(new string[] { "a", "b", "c", "d" }, new int[] { 1, 2, 3, 4 })]
+        [InlineData(new string[] { "abra", "cadabra", "yayaya", "boi" }, new int[] { 700, 400, 100, 5 })]
+        [InlineData(new string[] { "abra", "cadabra", "yayaya", "marceda", "lalala", "hi" }, new int[] { 432, 71, 53, 15, 63, 287 })]
+        public void LCUCacheTest(string[] keys, int[] values)
+        {
+            LCUCache<string, int> cache = new LCUCache<string, int>(5);
+
+            for (int i = 0; i < keys.Length; i++)
+            {
+                cache.Add(keys[i], values[i]);
+            }
+
+            Assert.True(cache.Count <= cache.max);
+
+            int value;
+
+            for (int i = 0; i < keys.Length; i++)
+            {
+                Assert.True(cache.TryGetValue(keys[i], out value));
+                Assert.True(value == values[i]);
+            }
+        }
     }
 }
