@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -8,9 +9,9 @@ namespace AdvancedConcepts
 {
     public class LCUCache<TKey, TVal>
     {
-        Dictionary<TKey, TVal> Map;
+        Dictionary<TKey, LinkedListNode<KeyValuePair<TKey, TVal>>> Map;
 
-        LinkedList<TVal> LinkedList;
+        LinkedList<KeyValuePair<TKey, TVal>> LinkedList;
 
         public int Count { get { return LinkedList.Count; } }        
 
@@ -18,34 +19,42 @@ namespace AdvancedConcepts
 
         public LCUCache(int max)
         {
-            Map = new Dictionary<TKey, TVal>();
-            LinkedList = new LinkedList<TVal>();
+            Map = new Dictionary<TKey, LinkedListNode<KeyValuePair<TKey, TVal>>>();
+            LinkedList = new LinkedList<KeyValuePair<TKey, TVal>>();
             this.max = max;
         }
 
         public void Add(TKey key, TVal val)
         {
-            if(!Map.ContainsKey(key))
+            LinkedList.AddFirst(new KeyValuePair<TKey, TVal> (key, val));
+            if (!Map.ContainsKey(key))
             {
-                Map.Add(key, val);
-                return;
+                Map.Add(key, LinkedList.First);
             }
-            Map[key] = val;
-            LinkedList.AddFirst(val);
+            else
+            {
+                LinkedList.Remove(Map[key]);
+                Map[key] = LinkedList.First;
+            }
+
             if (Map.Count <= max) return;
 
+            Map.Remove(LinkedList.Last.Value.Key);
             LinkedList.RemoveLast();
         }
 
         public bool TryGetValue(TKey key, out TVal value)
         {
-            if(Map.ContainsKey(key))
+            if (Map.ContainsKey(key))
             {
-                value = Map[key];
+                value = Map[key].Value.Value;
+                LinkedList.Remove(Map[key]);
+                LinkedList.AddFirst(new KeyValuePair<TKey, TVal>(key, value));
+
                 return true;
             }
 
-            value = default(TVal);
+            value = default;
             return false;
         }
     }

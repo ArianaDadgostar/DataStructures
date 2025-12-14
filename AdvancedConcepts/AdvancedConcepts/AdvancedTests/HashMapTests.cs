@@ -1,4 +1,5 @@
 using AdvancedConcepts;
+using System.Collections;
 
 namespace AdvancedTests
 {
@@ -166,10 +167,35 @@ namespace AdvancedTests
 
             int value;
 
-            for (int i = 0; i < keys.Length; i++)
+            int start = keys.Length - cache.max;
+            if(start < 0)
+            {
+                start = 0;
+            }
+
+            for (int i = start; i < keys.Length; i++)
             {
                 Assert.True(cache.TryGetValue(keys[i], out value));
                 Assert.True(value == values[i]);
+            }
+        }
+
+        [Theory]
+        [InlineData("abra", "popsmoke", "kendrick", "drake" )]
+        [InlineData("abra", "cadabra", "yayaya", "boi")]
+        [InlineData("abra", "cadabra", "yayaya", "marceda", "lalala", "hi")]
+        public void HuffmanTest(params string[] keys)
+        {
+            foreach(string key in keys)
+            {
+                Huffman huffman = new Huffman(key);
+
+                Tree huffmanTree = new Tree();
+
+                BitArray code = huffman.ReadValues(ref huffmanTree);
+                string uncoded = huffman.Decompress(code, huffmanTree);
+
+                Assert.True(uncoded == key);
             }
         }
     }
