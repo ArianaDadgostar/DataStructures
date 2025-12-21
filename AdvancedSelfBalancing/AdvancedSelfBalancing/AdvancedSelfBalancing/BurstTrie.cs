@@ -1,4 +1,5 @@
 ﻿using System.Net.Http.Headers;
+using System.Reflection.Metadata.Ecma335;
 
 namespace AdvancedSelfBalancing
 {
@@ -116,33 +117,27 @@ namespace AdvancedSelfBalancing
                 if (onLeft)
                 {
                     theRoot.Left = null;
+                    return;
                 }
-                else
-                {
-                    theRoot.Right = null;
-                }
+                theRoot.Right = null;
             }
             else if (removed.Left == null && removed.Right != null)
             {
                 if (onLeft)
                 {
                     theRoot.Left = removed.Right;
+                    return;
                 }
-                else
-                {
-                    theRoot.Right = removed.Right;
-                }
+                theRoot.Right = removed.Right;
             }
             else if (removed.Right == null && removed.Left != null)
             {
                 if (onLeft)
                 {
                     theRoot.Left = removed.Left;
+                    return;
                 }
-                else
-                {
-                    theRoot.Right = removed.Left;
-                }
+                theRoot.Right = removed.Left;
             }
             else if (removed.Right != null && removed.Left != null)
             {
@@ -152,6 +147,12 @@ namespace AdvancedSelfBalancing
                 {
                     testingRoot = tester;
                     tester = tester.Right;
+                }
+                if(testingRoot == removed)
+                {
+                    removed.value = tester.value;
+                    removed.Left = tester.Left;
+                    return;
                 }
                 removed.value = tester.value;
                 testingRoot.Right = tester.Left;
@@ -165,8 +166,8 @@ namespace AdvancedSelfBalancing
 
         public abstract BurstNode Insert(string value, int index);
         public abstract BurstNode? Remove(string value, int index);
-        public abstract BurstNode? Search(string value, int index);
-        internal abstract void GetAll(List<string> output);
+        //public abstract BurstNode? Search(string value, int index);
+        //internal abstract void GetAll(List<string> output);
     }
 
     public class ContainerNode : BurstNode
@@ -180,35 +181,41 @@ namespace AdvancedSelfBalancing
 
         private Node<string> Traverse(string value, int index, Node<string> current)
         {
-            if (value.Length <= index || value == current.value) return current;
-            else if (current == null)
+            if (current == null)
             {
-                current.value = value;
+                return new Node<string>(value);
             }
-            else if (current.value.Length <= index || value[index] >= current.value[index])
+            else if(value == current.value) return current;
+
+            else if (value.Length <= index)
             {
-                Traverse(value, index, current.Right);
+                current.Left = Traverse(value, index, current.Left);
             }
-            else if (value[index] <= current.value[index])
+
+            else if (current.value.Length <= index || value[index] > current.value[index])
             {
-                Traverse(value, index, current.Left);
+                current.Right = Traverse(value, index, current.Right);
+            }
+            else if (value[index] < current.value[index])
+            {
+                current.Left = Traverse(value, index, current.Left);
             }
             else if (value[index] == current.value[index])
             {
-                Traverse(value, index++, current.Right);
+                current = Traverse(value, index + 1, current);
             }
 
             return current;
         }
 
-        public BurstNode Insert(string value, int index)
+        public override BurstNode Insert(string value, int index)
         {
-            Traverse(value, index, BST.Root).value = value;
+            BST.Root = Traverse(value, index, BST.Root);
 
             return this;
         }
 
-        public BurstNode? Remove(string value)
+        public override BurstNode? Remove(string value, int index)
         {
             BST.Remove(value);
             return this;
@@ -219,20 +226,32 @@ namespace AdvancedSelfBalancing
     {
         ContainerNode[] Children { get; set; }
 
-        public BurstNode Insert(string value, int index)
+        public InternalNode(int childrenSize)
+        {
+            Children = new ContainerNode[childrenSize];
+        }
+
+        public override BurstNode Insert(string value, int index)
         {
             int childIndex = value[index] - 'a';
+
+            if (Children[childIndex] == null)
+            {
+                Children[childIndex] = new ContainerNode();
+            }
 
             Children[childIndex].Insert(value, index);
 
             return this;
         }
 
-        public BurstNode? Remove(string value, int index)
+        public override BurstNode? Remove(string value, int index)
         {
             int childIndex = value[index] - 'a';
 
-            Children[childIndex].Remove(value);
+            Children[childIndex].Remove(value, index);
+
+            return this;
         }
     }
 
