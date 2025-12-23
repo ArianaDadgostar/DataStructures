@@ -1,4 +1,5 @@
 ﻿using System.Net.Http.Headers;
+using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 
 namespace AdvancedSelfBalancing
@@ -81,6 +82,20 @@ namespace AdvancedSelfBalancing
             return tester.value;
         }
 
+        public Queue<T> InOrderTransversalRecursive(Node<T> curr, Queue<T> result)
+        {
+            if (curr == null) return result;
+
+            // do this stuff and check null so no if statements
+            InOrderTransversalRecursive(curr.Left, result);
+
+            result.Enqueue(curr.value);
+
+            InOrderTransversalRecursive(curr.Right, result);
+
+            return result;
+        }
+
         public bool Remove(T value)
         {
             Node<T> theRoot = Root;
@@ -107,6 +122,7 @@ namespace AdvancedSelfBalancing
                 }
             }
             RemoveNode(theRoot, tester, onLeft);
+            Count--;
             return true;
         }
 
@@ -114,6 +130,11 @@ namespace AdvancedSelfBalancing
         {
             if (removed.Right == null && removed.Left == null)
             {
+                if(theRoot == Root)
+                {
+                    Root = null;
+                    return;
+                }
                 if (onLeft)
                 {
                     theRoot.Left = null;
@@ -123,6 +144,11 @@ namespace AdvancedSelfBalancing
             }
             else if (removed.Left == null && removed.Right != null)
             {
+                if(theRoot == Root)
+                {
+                    Root = removed.Right;
+                    return;
+                }
                 if (onLeft)
                 {
                     theRoot.Left = removed.Right;
@@ -132,6 +158,11 @@ namespace AdvancedSelfBalancing
             }
             else if (removed.Right == null && removed.Left != null)
             {
+                if (theRoot == Root)
+                {
+                    Root = removed.Left;
+                    return;
+                }
                 if (onLeft)
                 {
                     theRoot.Left = removed.Left;
@@ -166,8 +197,8 @@ namespace AdvancedSelfBalancing
 
         public abstract BurstNode Insert(string value, int index);
         public abstract BurstNode? Remove(string value, int index);
-        //public abstract BurstNode? Search(string value, int index);
-        //internal abstract void GetAll(List<string> output);
+        public abstract Node<string>? Search(string prefix, int index);
+        public abstract List<string> GetAll(List<string> output);
     }
 
     public class ContainerNode : BurstNode
@@ -179,30 +210,32 @@ namespace AdvancedSelfBalancing
             BST = new Tree<string>();
         }
 
-        private Node<string> Traverse(string value, int index, Node<string> current)
+        private Node<string> Traverse(string value, int index, Node<string> current, bool isPrefix)
         {
             if (current == null)
             {
                 return new Node<string>(value);
+                BST.Count++;
             }
             else if(value == current.value) return current;
 
             else if (value.Length <= index)
             {
-                current.Left = Traverse(value, index, current.Left);
+                if (isPrefix) return current;
+                current.Left = Traverse(value, index, current.Left, isPrefix);
             }
 
             else if (current.value.Length <= index || value[index] > current.value[index])
             {
-                current.Right = Traverse(value, index, current.Right);
+                current.Right = Traverse(value, index, current.Right, isPrefix);
             }
             else if (value[index] < current.value[index])
             {
-                current.Left = Traverse(value, index, current.Left);
+                current.Left = Traverse(value, index, current.Left, isPrefix);
             }
             else if (value[index] == current.value[index])
             {
-                current = Traverse(value, index + 1, current);
+                current = Traverse(value, index + 1, current, isPrefix);
             }
 
             return current;
@@ -210,7 +243,10 @@ namespace AdvancedSelfBalancing
 
         public override BurstNode Insert(string value, int index)
         {
-            BST.Root = Traverse(value, index, BST.Root);
+            BST.Root = Traverse(value, index, BST.Root, false);
+
+            BurstNode node = BurstTrie.CheckForSize(this);
+            if (node != null) return node;
 
             return this;
         }
@@ -220,15 +256,27 @@ namespace AdvancedSelfBalancing
             BST.Remove(value);
             return this;
         }
+
+        public override Node<string>? Search(string prefix, int index)
+        {
+            return Traverse(prefix, index, BST.Root, true);
+        }
+
+        public override List<string> GetAll(List<string> output)
+        {
+            output = BST.InOrderTransversalRecursive(BST.Root, new Queue<string>(output)).ToList();
+
+            return output;
+        }
     }
 
     public class InternalNode : BurstNode
     {
-        ContainerNode[] Children { get; set; }
+        BurstNode[] Children { get; set; }
 
         public InternalNode(int childrenSize)
         {
-            Children = new ContainerNode[childrenSize];
+            Children = new BurstNode[childrenSize];
         }
 
         public override BurstNode Insert(string value, int index)
@@ -240,7 +288,7 @@ namespace AdvancedSelfBalancing
                 Children[childIndex] = new ContainerNode();
             }
 
-            Children[childIndex].Insert(value, index);
+            Children[childIndex] = Children[childIndex].Insert(value, index);
 
             return this;
         }
@@ -253,12 +301,54 @@ namespace AdvancedSelfBalancing
 
             return this;
         }
+
+        public override Node<string>? Search(string prefix, int index)
+        {
+            int childIndex = prefix[index] - 'a';
+
+            return Children[childIndex].Search(prefix, index);
+        }
+
+        public override List<string> GetAll(List<string> output)
+        {
+            foreach (var child in Children)
+            {
+                if (child == null) continue;
+
+                output = child.GetAll(output);
+            }
+
+            return output;
+        }
     }
 
     public class BurstTrie
     {
-        BurstNode Head { get; set; }
+        const int MAXBST = 5;
+        public BurstNode Head { get; set; }
 
+        public static BurstNode CheckForSize(ContainerNode node)
+        {
+            if (node.BST.Count <= MAXBST) return node;
 
+            InternalNode newInternal = new InternalNode(26);
+            Queue<string> allValues = node.BST.InOrderTransversalRecursive(node.BST.Root, new Queue<string>());
+            while (allValues.Count > 0)
+            {
+                string value = allValues.Dequeue();
+                newInternal.Insert(value, 0);
+            }
+            return newInternal;
+        }
+
+        public BurstTrie()
+        {
+            Head = new ContainerNode();
+        }
+
+        public void Insert(string value)
+        {
+            Head = Head.Insert(value, 0);
+        }
     }
 }
