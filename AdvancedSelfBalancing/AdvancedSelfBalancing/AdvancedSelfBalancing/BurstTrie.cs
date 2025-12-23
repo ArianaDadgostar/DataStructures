@@ -121,24 +121,24 @@ namespace AdvancedSelfBalancing
                     return false;
                 }
             }
-            RemoveNode(theRoot, tester, onLeft);
+            Root = RemoveNode(theRoot, tester, onLeft);
             Count--;
             return true;
         }
 
-        public void RemoveNode(Node<T> theRoot, Node<T> removed, bool onLeft)
+        public Node<T> RemoveNode(Node<T> theRoot, Node<T> removed, bool onLeft)
         {
             if (removed.Right == null && removed.Left == null)
             {
                 if(theRoot == Root)
                 {
                     Root = null;
-                    return;
+                    return Root;
                 }
                 if (onLeft)
                 {
                     theRoot.Left = null;
-                    return;
+                    return Root;
                 }
                 theRoot.Right = null;
             }
@@ -147,12 +147,12 @@ namespace AdvancedSelfBalancing
                 if(theRoot == Root)
                 {
                     Root = removed.Right;
-                    return;
+                    return Root;
                 }
                 if (onLeft)
                 {
                     theRoot.Left = removed.Right;
-                    return;
+                    return Root;
                 }
                 theRoot.Right = removed.Right;
             }
@@ -161,12 +161,12 @@ namespace AdvancedSelfBalancing
                 if (theRoot == Root)
                 {
                     Root = removed.Left;
-                    return;
+                    return Root;
                 }
                 if (onLeft)
                 {
                     theRoot.Left = removed.Left;
-                    return;
+                    return Root;
                 }
                 theRoot.Right = removed.Left;
             }
@@ -183,11 +183,13 @@ namespace AdvancedSelfBalancing
                 {
                     removed.value = tester.value;
                     removed.Left = tester.Left;
-                    return;
+                    return Root;
                 }
                 removed.value = tester.value;
                 testingRoot.Right = tester.Left;
             }
+
+            return null;
         }
     }
 
@@ -215,7 +217,6 @@ namespace AdvancedSelfBalancing
             if (current == null)
             {
                 return new Node<string>(value);
-                BST.Count++;
             }
             else if(value == current.value) return current;
 
@@ -244,11 +245,10 @@ namespace AdvancedSelfBalancing
         public override BurstNode Insert(string value, int index)
         {
             BST.Root = Traverse(value, index, BST.Root, false);
+            BST.Count++;
 
             BurstNode node = BurstTrie.CheckForSize(this);
-            if (node != null) return node;
-
-            return this;
+            return node;
         }
 
         public override BurstNode? Remove(string value, int index)
@@ -257,9 +257,39 @@ namespace AdvancedSelfBalancing
             return this;
         }
 
+
+        private Node<string> FindNode(string prefix, int index, Node<string> current)
+        {
+            if (current == null)
+            {
+                return null;
+            }
+            else if (prefix == current.value) return current;
+
+            else if (prefix.Length <= index)
+            {
+                return current;
+            }
+
+            else if (current.value.Length <= index || prefix[index] > current.value[index])
+            {
+                return FindNode(prefix, index, current.Right);
+            }
+            else if (prefix[index] < current.value[index])
+            {
+                return FindNode(prefix, index, current.Left);
+            }
+            else if (prefix[index] == current.value[index])
+            {
+                return FindNode(prefix, index + 1, current);
+            }
+
+            return current;
+        }
+
         public override Node<string>? Search(string prefix, int index)
         {
-            return Traverse(prefix, index, BST.Root, true);
+            return FindNode(prefix, index, BST.Root);
         }
 
         public override List<string> GetAll(List<string> output)
@@ -329,7 +359,7 @@ namespace AdvancedSelfBalancing
 
         public static BurstNode CheckForSize(ContainerNode node)
         {
-            if (node.BST.Count <= MAXBST) return node;
+            if (node.BST.Count < MAXBST) return node;
 
             InternalNode newInternal = new InternalNode(26);
             Queue<string> allValues = node.BST.InOrderTransversalRecursive(node.BST.Root, new Queue<string>());
@@ -349,6 +379,17 @@ namespace AdvancedSelfBalancing
         public void Insert(string value)
         {
             Head = Head.Insert(value, 0);
+        }
+
+        //remove
+        public void Remove(string value)
+        {
+            Head = Head.Remove(value, 0);
+        }
+
+        public void Search(string value)
+        {
+            Head.Search(value, 0);
         }
     }
 }

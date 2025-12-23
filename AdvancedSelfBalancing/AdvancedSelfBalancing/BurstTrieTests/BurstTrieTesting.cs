@@ -1,8 +1,16 @@
 using AdvancedSelfBalancing;
 using System.ComponentModel;
+using System.Xml.Serialization;
 
 namespace BurstTrieTests
 {
+    //check type of the burst node example
+    /*
+    BurstNode example = new InternalNode(67);
+            
+    Assert.True(example.GetType() == typeof(ContainerNode));
+    Assert.True(example is ContainerNode);
+    */
     public class BurstTrieTesting
     {
         [Theory]
@@ -10,24 +18,17 @@ namespace BurstTrieTests
         [InlineData("dea", "der", "dhf", "gim", "too")]
         public void BurstTrieInsertTest(params string[] array)
         {            
-            BurstTrie node = new BurstTrie();
+            BurstTrie burstTrie = new BurstTrie();
             InternalNode internalNode = new InternalNode(26);
 
-            //check type of the burst node example
-            /*
-            BurstNode example = new InternalNode(67);
-            
-            Assert.True(example.GetType() == typeof(ContainerNode));
-            Assert.True(example is ContainerNode);
-            */
 
             foreach (var item in array)
             {
-                node.Insert(item);
+                burstTrie.Insert(item);
                 internalNode.Insert(item, 0);
             }
 
-            Assert.True(node.Head is InternalNode);
+            Assert.True(burstTrie.Head is InternalNode);
 
             ;
         }
@@ -51,13 +52,13 @@ namespace BurstTrieTests
                 node.Remove(item, 0);
                 internalNode.Remove(item, 0);
 
-                ;
+                Assert.True(node.Search(item, 0) == null);
+                Assert.True(internalNode.Search(item, 0) == null);
             }
-
         }
 
         [Theory]
-        [InlineData("ad", "ac", "a", "ga")]
+        [InlineData("ad", "ac", "after", "ga")]
         [InlineData("dea", "der", "dhf", "gim")]
         public void BurstTrieSearchTest(params string[] array)
         {
@@ -75,7 +76,8 @@ namespace BurstTrieTests
                 Node<string> result = node.Search(item, 0);
                 Node<string> resultAlso = internalNode.Search(item, 0);
 
-                ;
+                Assert.True(result.value == item);
+                Assert.True(resultAlso.value == item);
             }
 
         }
@@ -113,17 +115,29 @@ namespace BurstTrieTests
         [InlineData("dea", "der", "dhf", "gim", "dar")]
         public void BurstTrieCheckSizeTest(params string[] array)
         {
-            ContainerNode node = new ContainerNode();
+            BurstTrie node = new BurstTrie();
             InternalNode internalNode = new InternalNode(26);
             BurstNode result;
 
             foreach (var item in array)
             {
-                result = node.Insert(item, 0);
+                node.Insert(item);
                 internalNode.Insert(item, 0);
             }
 
-            //Assert.True(result == );
+            List<string> nodeOutput = new List<string>();
+            List<string> internalOutput = new List<string>();
+
+            Assert.True(node.Head is InternalNode);
+
+
+            nodeOutput = node.Head.GetAll(nodeOutput);
+            internalOutput = internalNode.GetAll(internalOutput);
+
+            for (int i = 0; i < nodeOutput.Count; i++)
+            {
+                Assert.True(nodeOutput[i] == internalOutput[i]);
+            }
         }
     }
 }
