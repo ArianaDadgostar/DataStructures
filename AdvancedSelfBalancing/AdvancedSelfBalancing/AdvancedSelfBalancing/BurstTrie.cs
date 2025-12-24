@@ -197,8 +197,8 @@ namespace AdvancedSelfBalancing
     {
         internal BurstTrie ParentTrie { get; set; }
 
-        public abstract BurstNode Insert(string value, int index);
-        public abstract BurstNode? Remove(string value, int index);
+        public abstract BurstNode Insert(string value, int index, ref bool result);
+        public abstract BurstNode? Remove(string value, int index, ref bool result);
         public abstract Node<string>? Search(string prefix, int index);
         public abstract List<string> GetAll(List<string> output);
     }
@@ -242,18 +242,19 @@ namespace AdvancedSelfBalancing
             return current;
         }
 
-        public override BurstNode Insert(string value, int index)
+        public override BurstNode Insert(string value, int index, ref bool result)
         {
             BST.Root = Traverse(value, index, BST.Root, false);
             BST.Count++;
+            result = true;
 
             BurstNode node = BurstTrie.CheckForSize(this);
             return node;
         }
 
-        public override BurstNode? Remove(string value, int index)
+        public override BurstNode? Remove(string value, int index, ref bool result)
         {
-            BST.Remove(value);
+            result = BST.Remove(value);
             return this;
         }
 
@@ -309,7 +310,7 @@ namespace AdvancedSelfBalancing
             Children = new BurstNode[childrenSize];
         }
 
-        public override BurstNode Insert(string value, int index)
+        public override BurstNode Insert(string value, int index, ref bool result)
         {
             int childIndex = value[index] - 'a';
 
@@ -318,16 +319,16 @@ namespace AdvancedSelfBalancing
                 Children[childIndex] = new ContainerNode();
             }
 
-            Children[childIndex] = Children[childIndex].Insert(value, index);
+            Children[childIndex] = Children[childIndex].Insert(value, index, ref result);
 
             return this;
         }
 
-        public override BurstNode? Remove(string value, int index)
+        public override BurstNode? Remove(string value, int index, ref bool result)
         {
             int childIndex = value[index] - 'a';
 
-            Children[childIndex].Remove(value, index);
+            Children[childIndex].Remove(value, index, ref result);
 
             return this;
         }
@@ -356,6 +357,7 @@ namespace AdvancedSelfBalancing
     {
         const int MAXBST = 5;
         public BurstNode Head { get; set; }
+        public int Count; 
 
         public static BurstNode CheckForSize(ContainerNode node)
         {
@@ -366,7 +368,8 @@ namespace AdvancedSelfBalancing
             while (allValues.Count > 0)
             {
                 string value = allValues.Dequeue();
-                newInternal.Insert(value, 0);
+                bool result = false;
+                newInternal.Insert(value, 0, ref result);
             }
             return newInternal;
         }
@@ -378,18 +381,35 @@ namespace AdvancedSelfBalancing
 
         public void Insert(string value)
         {
-            Head = Head.Insert(value, 0);
+            bool result = false;
+            Head = Head.Insert(value, 0, ref result);
+            if (!result) return;
+
+            Count++;
         }
 
         //remove
-        public void Remove(string value)
+        //why is remove a void, what if it does not exist? maybe make it a bool function
+        public bool Remove(string value)
         {
-            Head = Head.Remove(value, 0);
+            bool result = false;
+            Head = Head.Remove(value, 0, ref result);
+
+            if (result) return result;
+
+            Count--;
+
+            return result;
         }
 
-        public void Search(string value)
+        public List<string> GetAll(List<string> output)
         {
-            Head.Search(value, 0);
+            return Head.GetAll(output);
+        }
+
+        public Node<string> Search(string value)
+        {
+            return Head.Search(value, 0);
         }
     }
 }
