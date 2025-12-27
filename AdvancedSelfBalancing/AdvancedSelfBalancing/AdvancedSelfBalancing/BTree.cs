@@ -40,7 +40,7 @@ namespace AdvancedSelfBalancing
             }
             else
             {
-                Insert(node.value[1], node.parent); //WONT WORK CUZ ITS GONNA GO TO CHILD AGAIN (INFINITE LOOP + CRASH)
+                Insert(node.value[1], node.parent, true); //WONT WORK CUZ ITS GONNA GO TO CHILD AGAIN (INFINITE LOOP + CRASH)
             }
 
             node.value[1] = default(T);
@@ -52,7 +52,7 @@ namespace AdvancedSelfBalancing
                 T val = node.value[i];
                 node.value[i] = default(T);
                 node.valueSize--;
-                Insert(val, node.parent);
+                Insert(val, node.parent, false);
             }
 
             return node.parent;
@@ -75,7 +75,12 @@ namespace AdvancedSelfBalancing
             node.valueSize++;
         }
 
-        public BNode<T> Insert(T value, BNode<T> node)
+        public void Insert(T value)
+        {
+            Head = Insert(value, Head, false);
+        }
+
+        public BNode<T> Insert(T value, BNode<T> node, bool resizing)
         {
             if (value.Equals(default(T))) return node;
             if(node == null)
@@ -92,9 +97,9 @@ namespace AdvancedSelfBalancing
             {
                 if (value.CompareTo(node.value[i]) >= 0 && !node.value[i].Equals(default(T))) continue;
 
-                if (node.Children[i] != null)
+                if (node.Children[i] != null && !resizing)
                 {
-                    Insert(value, node.Children[i]);
+                    Insert(value, node.Children[i], resizing);
                     inserted = true;
                     break;
                 }
@@ -104,9 +109,9 @@ namespace AdvancedSelfBalancing
                 break;
             }
 
-            if (node.Children[node.valueSize] != null && !inserted)
+            if (node.Children[node.valueSize] != null && !inserted && !resizing)
             {
-                node.Children[node.valueSize] = Insert(value, node.Children[node.valueSize]);
+                node.Children[node.valueSize] = Insert(value, node.Children[node.valueSize], resizing);
             }
             else if (!inserted)
             {
@@ -115,7 +120,7 @@ namespace AdvancedSelfBalancing
 
             if (node.valueSize <= 3) return node;
 
-            return Resize(value, node);;
+            return Resize(value, node);
         }
 
         public BNode<T> Search(T value, BNode<T> node)

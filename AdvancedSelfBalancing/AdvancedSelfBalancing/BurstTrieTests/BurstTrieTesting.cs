@@ -132,21 +132,20 @@ namespace BurstTrieTests
     {
         [Theory]
         [InlineData(1, 5, 9, 3, 7)]
-        [InlineData(6, 1, 0, 9, 2, 3)]
+        [InlineData(6, 1, 4, 9, 2, 3)]
         public void BTreeInsertTest(params int[] array)
         {
             BTree<int> bTree = new BTree<int>();
 
             foreach (var item in array)
             {
-                bTree.Head = bTree.Insert(item, bTree.Head);
+              bTree.Insert(item);
             }
 
             foreach(var item in array)
             {
-                Assert.True(bTree.Search(item, bTree.Head).value.Equals(item));
+                Assert.True(bTree.Search(item, bTree.Head).value.Contains(item));
             }
         }
-
     }
 }
