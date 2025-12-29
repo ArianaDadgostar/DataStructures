@@ -172,5 +172,28 @@ namespace BurstTrieTests
 
             Assert.True(tree.ColorTesting(tree.Head));
         }
+
+        [Theory]
+        [InlineData(1, 5, 9, 3, 7)]
+        [InlineData(6, 1, 4, 9, 2, 3)]
+        public void RedBlackRemoveTest(params int[] array)
+        {
+            RedBlackTree<int> tree = new RedBlackTree<int>();
+
+            foreach(var item in array)
+            {
+                tree.Head = tree.Insert(item, tree.Head);
+            }
+
+            Assert.True(!tree.Head.isRed);
+
+            foreach(var item in array)
+            {
+                tree.Head = tree.Remove(item, tree.Head);
+                Assert.True(!tree.Search(item, tree.Head));
+                Assert.True(tree.ColorTesting(tree.Head));
+            }
+
+        }
     }
 }

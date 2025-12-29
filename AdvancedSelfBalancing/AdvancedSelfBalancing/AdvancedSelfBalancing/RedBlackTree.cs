@@ -23,6 +23,11 @@ namespace AdvancedSelfBalancing
             parent = null;
             isRed = false;
         }
+
+        public RedBlackNode()
+        {
+            isRed = false;
+        }
     }
 
     public class RedBlackTree<T> where T : IComparable<T>
@@ -45,8 +50,33 @@ namespace AdvancedSelfBalancing
             node.right.isRed = !node.right.isRed;
         }
 
+        void parentLessRotate(RedBlackNode<T> node, bool left)
+        {
+            if(left)
+            {
+                if(node.right == null) return;
+
+                RedBlackNode<T> replacement = node.right.left;
+                node.right.left = node;
+                node.right = replacement;
+                
+                return;
+            }
+            if(node.left == null) return;
+
+            RedBlackNode<T> lReplacement = node.left.right;
+            node.left.right = node;
+            node.left = lReplacement;
+        }
+
         public void RotateLeft(RedBlackNode<T> node)
         {
+            if(node.parent == null)
+            {
+                parentLessRotate(node, true);
+                return;
+            }
+
             RedBlackNode<T> newParent = node.parent.parent;
             if (node.left != null)
             {
@@ -69,6 +99,12 @@ namespace AdvancedSelfBalancing
 
         public void RotateRight(RedBlackNode<T> node)
         {
+            if(node.parent == null)
+            {
+                parentLessRotate(node, false);
+                return;
+            }
+
             RedBlackNode<T> newParent = node.parent.parent;
             if (node.right != null)
             {
@@ -148,7 +184,7 @@ namespace AdvancedSelfBalancing
             RotateLeft(node);
         }
 
-        public void PhysicalRemoval(RedBlackNode<T> node)
+        public RedBlackNode<T> PhysicalRemoval(RedBlackNode<T> node)
         {
             RedBlackNode<T> replacement = null;
             if(node.left != null && node.right != null)
@@ -159,23 +195,9 @@ namespace AdvancedSelfBalancing
                     replacement = replacement.left;
                 }
 
-                if (node == node.parent.left)
-                {
-                    node.parent.left = replacement;
-                }
-                else
-                {
-                    node.parent.right = replacement;
-                }
-
-                replacement.left = node.left;
-                if (replacement.right != null) return;
-
-                replacement.right = node.right;
-                return;
+                replacement.parent.left = replacement.right;
             }
-
-            if(node.left != null)
+            else if(node.left != null)
             {
                 replacement = node.left;
             }
@@ -186,32 +208,44 @@ namespace AdvancedSelfBalancing
             else
             {
                 node = null;
-                return;
+                return node;
             }
 
-            if (node == node.parent.left)
+            if (node.parent != null && node == node.parent.left)
             {
                 node.parent.left = replacement;
             }
-            else
+            else if(node.parent != null)
             {
                 node.parent.right = replacement;
             }
-
-            replacement.left = node.left;
-            if (replacement.right != null) return;
-
-            replacement.right = node.right;
-            return;
-        }
-
-        public bool Remove(T value, RedBlackNode<T> node)
-        {
-            if(node.value.Equals(value) && node.isRed)
+            else
             {
-
+                node = replacement;
             }
 
+            replacement.left = node.left;
+            if (replacement.right != null) return node;
+
+            replacement.right = node.right;
+            return node;
+        }
+
+        public void FixUp(RedBlackNode<T> node)
+        {
+            if((node.left == null || !node.left.isRed) && node.right != null && node.right.isRed)
+            {
+                RotateLeft(node);
+            }
+
+            if(node.left == null || !node.left.isRed || node.right == null || !node.right.isRed) return;
+            
+            FlipColor(node);
+        }
+
+        public RedBlackNode<T> Remove(T value, RedBlackNode<T> node)
+        {
+            if(node == null) return node;
             if(node.left != null && node.left.isRed)
             {
                 RotateRight(node);
@@ -219,27 +253,37 @@ namespace AdvancedSelfBalancing
 
             if(value.CompareTo(node.value) < 0)
             {
-                if (node.left == null) return false;
+                if (node.left == null) return null;
                 
                 if(!node.left.isRed && node.left.left != null && !node.left.left.isRed)
                 {
                     MoveRedLeft(node);
                 }
 
-                Remove(value, node.left);
+                node.left = Remove(value, node.left);
+                FixUp(node);
             }
 
-            if (value.CompareTo(node.value) > 0)
+            if (value.CompareTo(node.value) >= 0)
             {
-                if (node.right == null) return false;
+                if (node.right == null) return null;
 
                 if(!node.right.isRed && node.left != null && !node.left.isRed)
                 {
-                    RotateRight(node);
+                    MoveRedRight(node);
                 }
 
-                Remove(value, node.right);
+                if(value.CompareTo(node.value) == 0)
+                {
+                    node = PhysicalRemoval(node);
+                    return node;
+                }
+
+                node.right = Remove(value, node.right);
+                FixUp(node);
             }
+
+            return node;
         }
 
         #region Testing
