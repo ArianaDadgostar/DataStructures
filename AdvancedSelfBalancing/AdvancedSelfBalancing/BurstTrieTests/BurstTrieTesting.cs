@@ -195,5 +195,25 @@ namespace BurstTrieTests
             }
 
         }
+
+        [Theory]
+        [InlineData(1, 5, 9, 3, 7)]
+        [InlineData(6, 1, 4, 9, 2, 3)]
+        public void SortedSetTest(params int[] array)
+        {
+            RedBlackTree<int> tree = new RedBlackTree<int>();
+
+            foreach (var item in array)
+            {
+                tree.Head = tree.Insert(item, tree.Head);
+            }
+
+            foreach (var item in array)
+            {
+                Assert.True(tree.Max() >= item);
+                Assert.True(tree.Min() <= item);
+                Assert.True(tree.Ceiling(item) == item && tree.Floor(item) == item);
+            }
+        }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -30,9 +31,13 @@ namespace AdvancedSelfBalancing
         }
     }
 
-    public class RedBlackTree<T> where T : IComparable<T>
+    public class RedBlackTree<T> : ISortedSet<T> where T : IComparable<T>
     {
         public RedBlackNode<T> Head;
+
+        public IComparer<T> Comparer => throw new NotImplementedException();
+
+        public int Count { get; } = 0;
 
         #region InsertAid
 
@@ -286,6 +291,35 @@ namespace AdvancedSelfBalancing
             return node;
         }
 
+        public RedBlackNode<T> Find(T value, RedBlackNode<T> node)
+        {
+            if (node == null) return null;
+            if (value.Equals(node.value)) return node;
+
+            if (node.left != null)
+            {
+                return Find(value, node.left);
+            }
+
+            if (node.right != null)
+            {
+                return Find(value, node.right);
+            }
+
+            return null;
+        }
+        public void InOrderTransversalRecursive(RedBlackNode<T> curr, ref Queue<T> result)
+        {
+            if (curr == null) return;
+
+            // do this stuff and check null so no if statements
+            InOrderTransversalRecursive(curr.left, ref result);
+
+            result.Enqueue(curr.value);
+
+            InOrderTransversalRecursive(curr.right, ref result);
+        }
+
         #region Testing
 
         public bool ColorTesting(RedBlackNode<T> current)
@@ -320,5 +354,124 @@ namespace AdvancedSelfBalancing
         }
 
         #endregion
+
+        public void Clear()
+        {
+            Head = null;
+        }
+
+        public bool Add(T item)
+        {
+            Head = Insert(item, Head);
+            if (Search(item, Head)) return true;
+
+            return false;
+        }
+
+        public void AddRange(IEnumerable<T> items)
+        {
+            foreach(T item in items)
+            {
+                Head = Insert(item, Head);
+            }
+        }
+
+        public bool Contains(T item)
+        {
+            return Search(item, Head);
+        }
+
+        public bool Remove(T item)
+        {
+            return Remove(item);
+        }
+
+        public T Max()
+        {
+            RedBlackNode<T> node = Head;
+            while(node.right != null)
+            {
+                node = node.right;
+            }
+
+            return node.value;
+        }
+
+        public T Min()
+        {
+            RedBlackNode<T> node = Head;
+            while(node.left != null)
+            {
+                node = node.left;
+            }
+
+            return node.value;
+        }
+
+        public T Ceiling(T item)
+        {
+            Queue<T> queue = new Queue<T>();
+            InOrderTransversalRecursive(Head, ref queue);
+
+            while(!queue.Peek().Equals(item))
+            {
+                if (queue.Peek().CompareTo(item) > 0) break;
+
+                queue.Dequeue();
+            }
+
+            return queue.Peek();
+        }
+
+        public T Floor(T item)
+        {
+            Queue<T> queue = new Queue<T>();
+            InOrderTransversalRecursive(Head, ref queue);
+
+            T previous = default(T);
+
+            while (!previous.Equals(item))
+            {
+                if (queue.Peek().CompareTo(item) > 0) break;
+
+                previous = queue.Dequeue();
+            }
+
+            return previous;
+        }
+
+        public ISortedSet<T> Union(ISortedSet<T> other)
+        {
+            foreach(T item in other)
+            {
+                Head = Insert(item, Head);
+            }
+
+            return this;
+        }
+
+        public ISortedSet<T> Intersection(ISortedSet<T> other)
+        {
+            RedBlackTree<T> intersection = new RedBlackTree<T>();
+            foreach(T item in other)
+            {
+                if(!Search(item, Head)) continue;
+
+                intersection.Head = intersection.Insert(item, intersection.Head);
+            }
+
+            return intersection;
+        }
+
+        public IEnumerator<T> GetEnumerator()
+        {
+            throw new NotImplementedException();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
     }
 }
