@@ -131,6 +131,8 @@ namespace AdvancedSelfBalancing
 
         #endregion
 
+        #region RedBlackOriginal
+
         public RedBlackNode<T> Insert(T value, RedBlackNode<T> node)
         {
             if (value.Equals(default(T))) return node;
@@ -308,6 +310,9 @@ namespace AdvancedSelfBalancing
 
             return null;
         }
+
+        #endregion
+
         public void InOrderTransversalRecursive(RedBlackNode<T> curr, ref Queue<T> result)
         {
             if (curr == null) return;
@@ -340,12 +345,12 @@ namespace AdvancedSelfBalancing
             if (node == null) return false;
             if (value.Equals(node.value)) return true;
 
-            if(node.left != null)
+            if(value.CompareTo(node.value) < 0)
             {
                 if (Search(value, node.left)) return true;
             }
 
-            if (node.right != null)
+            else if (value.CompareTo(node.value) > 0)
             {
                 if (Search(value, node.right)) return true;
             }
@@ -354,6 +359,8 @@ namespace AdvancedSelfBalancing
         }
 
         #endregion
+
+        #region SortedSetFuncs
 
         public void Clear()
         {
@@ -465,13 +472,30 @@ namespace AdvancedSelfBalancing
 
         public IEnumerator<T> GetEnumerator()
         {
-            throw new NotImplementedException();
+            return this.EnumeratorRun(Head);
+        }
+
+        public IEnumerator<T> EnumeratorRun(RedBlackNode<T> curr)
+        {
+            if(curr.left != null)
+            {
+                EnumeratorRun(curr.left);
+            }
+
+            yield return curr.value;
+
+            if(curr.right != null)
+            {
+                EnumeratorRun(curr.right);
+            }
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
         }
+
+        #endregion
 
     }
 }

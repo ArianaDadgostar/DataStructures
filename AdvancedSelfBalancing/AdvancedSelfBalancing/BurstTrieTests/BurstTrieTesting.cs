@@ -215,5 +215,24 @@ namespace BurstTrieTests
                 Assert.True(tree.Ceiling(item) == item && tree.Floor(item) == item);
             }
         }
+
+        
+        [Theory]
+        [InlineData(1, 5, 9, 3, 7)]
+        [InlineData(6, 1, 4, 9, 2, 3)]
+        public void IEnumerableTest(params int[] array)
+        {
+            RedBlackTree<int> tree = new RedBlackTree<int>();
+
+            foreach (var item in array)
+            {
+                tree.Head = tree.Insert(item, tree.Head);
+            }
+
+            foreach (var item in tree)
+            {
+                Assert.True(tree.Contains(item));
+            }
+        }
     }
 }
